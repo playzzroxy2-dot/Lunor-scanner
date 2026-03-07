@@ -16,10 +16,14 @@ html{scroll-behavior:smooth;}
 body{background:var(--bg);color:#ddeeff;font-family:'Rajdhani',sans-serif;overflow-x:hidden;cursor:none;}
 
 /* ─── CUSTOM CURSOR ─── */
-#CUR{position:fixed;pointer-events:none;z-index:9999;top:0;left:0;width:30px;height:30px;transform:translate(-15px,-15px);}
-#CUR .ring{width:30px;height:30px;border:1.5px solid var(--c);border-radius:50%;transition:all .12s ease;box-shadow:0 0 10px rgba(0,245,255,.3);}
-#CUR .dot{width:5px;height:5px;background:var(--c);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px var(--c);}
-#CUR.clicking .ring{transform:scale(.7);border-color:var(--pk);}
+#CUR{position:fixed;pointer-events:none;z-index:9999;top:0;left:0;will-change:transform;}
+#CUR .ring{width:34px;height:34px;border:1.5px solid var(--c);border-radius:50%;position:absolute;top:0;left:0;transform:translate(-50%,-50%);transition:width .18s ease,height .18s ease,border-color .18s ease,opacity .18s ease;box-shadow:0 0 12px rgba(0,245,255,.35),inset 0 0 6px rgba(0,245,255,.08);}
+#CUR .ring::before{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(0,245,255,.12);animation:ringPulse 2s ease-in-out infinite;}
+#CUR .dot{width:5px;height:5px;background:var(--c);border-radius:50%;position:absolute;top:0;left:0;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--c),0 0 20px rgba(0,245,255,.5);transition:transform .1s ease,background .18s ease;}
+#CUR.clicking .ring{width:22px;height:22px;border-color:var(--pk);box-shadow:0 0 18px rgba(255,0,136,.6);}
+#CUR.clicking .dot{background:var(--pk);box-shadow:0 0 12px var(--pk),0 0 24px rgba(255,0,136,.6);transform:translate(-50%,-50%) scale(1.6);}
+#CUR.hovering .ring{width:46px;height:46px;border-color:rgba(0,245,255,.6);box-shadow:0 0 20px rgba(0,245,255,.4);}
+@keyframes ringPulse{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:.1;transform:scale(1.4);}}
 
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar{width:3px;}
@@ -538,11 +542,4 @@ animation:sbgl 2.5s ease-in-out infinite,sbbg 8s linear infinite;}
 #soundBtn:hover{border-color:var(--c);box-shadow:0 0 18px rgba(0,245,255,.25);transform:scale(1.1);}
 
 /* GB6: MULTI-FILE QUEUE */
-#queuePanel{display:none;background:rgba(5,9,26,.95);border:1px solid rgba(0,255,136,.18);border-radius:14px;margin-bottom:1.5rem;overflow:hidden;}
-#queuePanel.show{display:block;animation:fi .3s ease;}
-.qp-hdr{padding:10px 16px;border-bottom:1px solid rgba(0,255,136,.1);font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:3px;color:rgba(0,255,136,.5);display:flex;align-items:center;justify-content:space-between;}
-.qp-list{max-height:180px;overflow-y:auto;}
-.qi{display:flex;align-items:center;gap:.8rem;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s;}
-.qi:hover{background:rgba(255,255,255,.01);}
-.qi-icon{font-size:1.2rem;flex-shrink:0;}
-.qi-name{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:rgba(200,230,255,.7);flex:1;overflow:hidden;text-overflow:ellipsis;white-spac... (123 KB left)
+#queuePanel{display:none;background:rgba(5,9,26,.95);border:1px solid rgba(0,255,136,.18);border... (125 KB left)
