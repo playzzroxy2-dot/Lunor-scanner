@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunor Scanner — Advanced Roblox Security Analysis Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #00d4ff;
+    --accent2: #0077ff;
+    --accent-glow: rgba(0,212,255,0.35);
+    --accent-glow2: rgba(0,212,255,0.12);
+    --bg: #050810;
+    --bg2: #080c18;
+    --panel: rgba(8,14,32,0.85);
+    --panel-border: rgba(0,212,255,0.18);
+    --panel-glow: rgba(0,212,255,0.07);
+    --text: #c8e0f0;
+    --text-dim: #4a6a80;
+    --text-bright: #e8f4ff;
+    --red: #ff3b5c;
+    --red-glow: rgba(255,59,92,0.3);
+    --yellow: #ffc857;
+    --green: #00e5a0;
+    --green-glow: rgba(0,229,160,0.3);
+    --purple: #9b59ff;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+    --font-display: 'Orbitron', sans-serif;
+  }
+
+  .theme-purple { --accent:#b060ff; --accent2:#7020ff; --accent-glow:rgba(176,96,255,0.35); --accent-glow2:rgba(176,96,255,0.12); --panel-border:rgba(176,96,255,0.18); --panel-glow:rgba(176,96,255,0.07); }
+  .theme-red { --accent:#ff3b5c; --accent2:#cc0030; --accent-glow:rgba(255,59,92,0.35); --accent-glow2:rgba(255,59,92,0.12); --panel-border:rgba(255,59,92,0.18); --panel-glow:rgba(255,59,92,0.07); }
+  .theme-green { --accent:#00e5a0; --accent2:#00a060; --accent-glow:rgba(0,229,160,0.35); --accent-glow2:rgba(0,229,160,0.12); --panel-border:rgba(0,229,160,0.18); --panel-glow:rgba(0,229,160,0.07); }
+  .theme-gold { --accent:#ffc857; --accent2:#cc8800; --accent-glow:rgba(255,200,87,0.35); --accent-glow2:rgba(255,200,87,0.12); --panel-border:rgba(255,200,87,0.18); --panel-glow:rgba(255,200,87,0.07); }
+  .theme-ice { --accent:#e0f4ff; --accent2:#80c8ff; --accent-glow:rgba(224,244,255,0.3); --accent-glow2:rgba(224,244,255,0.10); --panel-border:rgba(224,244,255,0.15); --panel-glow:rgba(224,244,255,0.06); --bg:#06090f; }
+  .theme-void { --accent:#6a6a8a; --accent2:#3a3a5a; --accent-glow:rgba(106,106,138,0.2); --accent-glow2:rgba(106,106,138,0.07); --panel-border:rgba(106,106,138,0.15); --panel-glow:rgba(106,106,138,0.05); }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    font-family: var(--font-ui);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ─── ANIMATED BACKGROUND ─── */
+  #bg-canvas {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridPulse 8s ease-in-out infinite;
+  }
+  @keyframes gridPulse { 0%,100%{opacity:.4} 50%{opacity:.7} }
+
+  /* ─── LAYOUT ─── */
+  #app {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-template-columns: 220px 1fr;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ─── HEADER ─── */
+  #header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 0 20px;
+    background: rgba(5,8,16,0.9);
+    border-bottom: 1px solid var(--panel-border);
+    backdrop-filter: blur(12px);
+  }
+  .logo-area {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo-hex {
+    width: 36px; height: 36px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-hex svg { width:36px; height:36px; }
+  .logo-hex svg path { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .logo-hex .inner { position:absolute; width:14px; height:14px; background: var(--accent); clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); animation: innerPulse 2s ease-in-out infinite; }
+  @keyframes innerPulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+  .logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 900; letter-spacing: 3px; color: var(--text-bright); }
+  .logo-text span { color: var(--accent); }
+  .logo-tag { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .header-center {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green-glow); animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .theme-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; transition: all .2s; position: relative;
+  }
+  .theme-btn:hover { transform: scale(1.2); }
+  .theme-btn.active { border-color: white; }
+  .theme-btn-blue { background: #00d4ff; }
+  .theme-btn-purple { background: #b060ff; }
+  .theme-btn-red { background: #ff3b5c; }
+  .theme-btn-green { background: #00e5a0; }
+  .theme-btn-gold { background: #ffc857; }
+  .theme-btn-ice { background: #e0f4ff; }
+  .theme-btn-void { background: #6a6a8a; }
+
+  /* ─── SIDEBAR ─── */
+  #sidebar {
+    background: rgba(5,8,16,0.92);
+    border-right: 1px solid var(--panel-border);
+    padding: 18px 0;
+    display: flex; flex-direction: column; gap: 2px;
+    overflow-y: auto;
+    backdrop-filter: blur(12px);
+  }
+  .nav-section-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px;
+    color: var(--text-dim); padding: 12px 18px 6px; text-transform: uppercase;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 18px; cursor: pointer;
+    font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+    color: var(--text-dim); letter-spacing: .5px;
+    border-left: 2px solid transparent;
+    transition: all .2s; user-select: none; position: relative; overflow: hidden;
+  }
+  .nav-btn::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(90deg, var(--accent-glow2), transparent);
+    opacity: 0; transition: opacity .2s;
+  }
+  .nav-btn:hover { color: var(--text-bright); border-left-color: var(--accent); }
+  .nav-btn:hover::before { opacity: 1; }
+  .nav-btn.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .nav-btn.active::before { opacity: 1; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; font-family: var(--font-mono); font-size: 10px;
+    background: var(--red); color: white; padding: 1px 6px; border-radius: 3px;
+    font-weight: 700;
+  }
+
+  /* ─── MAIN CONTENT ─── */
+  #main {
+    overflow-y: auto; overflow-x: hidden;
+    padding: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border) transparent;
+  }
+
+  /* ─── PANELS ─── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+  }
+  .panel::before {
+    content:''; position:absolute; inset:0; border-radius:10px;
+    background: radial-gradient(ellipse at top left, var(--panel-glow), transparent 60%);
+    pointer-events: none;
+  }
+  .panel-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-family: var(--font-display); font-size: 11px; font-weight: 700;
+    letter-spacing: 2.5px; color: var(--accent); text-transform: uppercase;
+  }
+  .panel-line {
+    flex: 1; height: 1px; background: linear-gradient(90deg, var(--panel-border), transparent);
+  }
+
+  /* ─── GRID LAYOUTS ─── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-60-40 { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; }
+
+  /* ─── STAT CARDS ─── */
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 18px;
+    position: relative; overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+  .stat-card::after {
+    content:''; position:absolute; top:0; right:0;
+    width:80px; height:80px; border-radius:50%;
+    background: radial-gradient(circle, var(--accent-glow2), transparent 70%);
+  }
+  .stat-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--text-bright); letter-spacing: -1px; }
+  .stat-value.red { color: var(--red); text-shadow: 0 0 20px var(--red-glow); }
+  .stat-value.green { color: var(--green); text-shadow: 0 0 20px var(--green-glow); }
+  .stat-value.accent { color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); }
+  .stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: var(--font-mono); }
+
+  /* ─── BIG COUNTER ─── */
+  .big-counter-wrap {
+    text-align: center; padding: 30px 0;
+  }
+  .big-counter-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px;
+    color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .big-counter {
+    font-family: var(--font-display); font-size: 62px; font-weight: 900;
+    color: var(--accent); letter-spacing: -2px;
+    text-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-glow2);
+    animation: counterGlow 2s ease-in-out infinite;
+  }
+  @keyframes counterGlow { 0%,100%{text-shadow:0 0 40px var(--accent-glow),0 0 80px var(--accent-glow2)} 50%{text-shadow:0 0 60px var(--accent-glow),0 0 120px var(--accent-glow2)} }
+  .big-counter-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 6px; }
+
+  /* ─── ACTIVITY FEED ─── */
+  .activity-feed {
+    height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+    scrollbar-width: thin; scrollbar-color: var(--panel-border) transparent;
+  }
+  .activity-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-family: var(--font-mono); font-size: 11px;
+    padding: 5px 8px; border-radius: 4px;
+    border-left: 2px solid transparent;
+    animation: fadeSlideIn .3s ease-out;
+  }
+  @keyframes fadeSlideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+  .activity-item.info { color: var(--text-dim); border-left-color: var(--text-dim); }
+  .activity-item.warn { color: var(--yellow); border-left-color: var(--yellow); background: rgba(255,200,87,0.05); }
+  .activity-item.danger { color: var(--red); border-left-color: var(--red); background: rgba(255,59,92,0.05); }
+  .activity-item.ok { color: var(--green); border-left-color: var(--green); background: rgba(0,229,160,0.05); }
+  .activity-ts { color: var(--text-dim); opacity:.6; white-space: nowrap; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 6px; border: 1px solid var(--accent);
+    background: rgba(0,212,255,0.07);
+    color: var(--accent); font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+    letter-spacing: 1px; cursor: pointer; user-select: none;
+    transition: all .2s; position: relative; overflow: hidden;
+    text-transform: uppercase;
+  }
+  .btn::after {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,50%), var(--accent-glow2), transparent 60%);
+    opacity: 0; transition: opacity .2s;
+  }
+  .btn:hover {
+    background: rgba(0,212,255,0.15);
+    box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(0,212,255,0.05);
+    transform: scale(1.02);
+  }
+  .btn:hover::after { opacity: 1; }
+  .btn:active { transform: scale(.97); }
+  .btn.danger { border-color: var(--red); background: rgba(255,59,92,0.07); color: var(--red); }
+  .btn.danger:hover { background: rgba(255,59,92,0.15); box-shadow: 0 0 20px var(--red-glow); }
+  .btn.success { border-color: var(--green); background: rgba(0,229,160,0.07); color: var(--green); }
+  .btn.success:hover { background: rgba(0,229,160,0.15); box-shadow: 0 0 20px var(--green-glow); }
+  .btn.sm { padding: 6px 14px; font-size: 11px; }
+  .btn.lg { padding: 14px 32px; font-size: 15px; }
+
+  .ripple {
+    position:absolute; border-radius:50%;
+    background: rgba(255,255,255,0.2);
+    transform: scale(0);
+    animation: rippleAnim .5s linear;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim { to{transform:scale(4);opacity:0} }
+
+  /* ─── SCANNER TAB ─── */
+  .drop-zone {
+    border: 2px dashed var(--panel-border);
+    border-radius: 12px; padding: 50px 30px;
+    text-align: center; cursor: pointer;
+    transition: all .3s; position: relative;
+    background: rgba(0,0,0,0.2);
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-glow2);
+    box-shadow: 0 0 30px var(--accent-glow);
+  }
+  .drop-icon { font-size: 42px; margin-bottom: 12px; opacity: .5; }
+  .drop-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-bright); letter-spacing: 2px; margin-bottom: 8px; }
+  .drop-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  .drop-formats { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .format-tag {
+    font-family: var(--font-mono); font-size: 10px;
+    border: 1px solid var(--panel-border); border-radius: 4px;
+    padding: 3px 8px; color: var(--text-dim);
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap { margin: 16px 0; }
+  .progress-label { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--text-dim); margin-bottom:6px; }
+  .progress-track { height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:2px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s; box-shadow: 0 0 10px var(--accent-glow); }
+
+  /* ─── SCAN MODES ─── */
+  .mode-card {
+    border: 1px solid var(--panel-border); border-radius: 8px; padding: 16px;
+    cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+  }
+  .mode-card::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, var(--panel-glow), transparent);
+    opacity:0; transition: opacity .2s;
+  }
+  .mode-card:hover, .mode-card.active { border-color: var(--accent); }
+  .mode-card:hover::before, .mode-card.active::before { opacity:1; }
+  .mode-card.active { box-shadow: 0 0 20px var(--accent-glow); }
+  .mode-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-bright); letter-spacing: 1.5px; margin-bottom: 6px; }
+  .mode-title span { color: var(--accent); }
+  .mode-desc { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); line-height: 1.6; }
+  .mode-badge { position:absolute; top:12px; right:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:1px; padding:2px 6px; border-radius:3px; }
+  .mode-badge.fast { background: rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.3); }
+  .mode-badge.deep { background: rgba(255,59,92,0.15); color:var(--red); border:1px solid rgba(255,59,92,0.3); }
+
+  /* ─── THREAT RESULT ─── */
+  .threat-result {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    margin-top: 20px; overflow: hidden;
+  }
+  .threat-result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--panel-border);
+  }
+  .risk-badge {
+    font-family: var(--font-display); font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; padding: 4px 12px; border-radius: 4px;
+  }
+  .risk-safe { background: rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.3); }
+  .risk-low { background: rgba(255,200,87,0.15); color:var(--yellow); border:1px solid rgba(255,200,87,0.3); }
+  .risk-high { background: rgba(255,100,0,0.15); color:#ff8c00; border:1px solid rgba(255,100,0,0.3); }
+  .risk-infected { background: rgba(255,59,92,0.15); color:var(--red); border:1px solid rgba(255,59,92,0.3); box-shadow:0 0 12px var(--red-glow); }
+  .risk-suspicious { background: rgba(176,96,255,0.15); color:var(--purple); border:1px solid rgba(176,96,255,0.3); }
+
+  .threat-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .threat-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px; border-radius: 6px;
+    border-left: 3px solid transparent;
+    background: rgba(0,0,0,0.2);
+    font-size: 13px;
+  }
+  .threat-item.sev-critical { border-left-color: var(--red); }
+  .threat-item.sev-high { border-left-color: #ff8c00; }
+  .threat-item.sev-med { border-left-color: var(--yellow); }
+  .threat-item.sev-low { border-left-color: var(--text-dim); }
+  .threat-sev {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    letter-spacing: 1px; white-space: nowrap; padding: 2px 6px;
+    border-radius: 3px; margin-top: 2px;
+  }
+  .sev-critical-badge { background: rgba(255,59,92,0.2); color:var(--red); }
+  .sev-high-badge { background: rgba(255,140,0,0.2); color:#ff8c00; }
+  .sev-med-badge { background: rgba(255,200,87,0.2); color:var(--yellow); }
+  .sev-low-badge { background: rgba(106,106,138,0.2); color:var(--text-dim); }
+  .threat-info { flex: 1; }
+  .threat-name { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--text-bright); }
+  .threat-loc { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin: 2px 0; }
+  .threat-desc { font-family: var(--font-ui); font-size: 12px; color: var(--text); opacity: .7; }
+  .confidence-bar { margin-top: 6px; }
+  .confidence-track { height: 3px; background: rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; }
+  .confidence-fill { height:100%; border-radius:2px; }
+
+  /* ─── AI CHAT ─── */
+  .chat-container { display: flex; flex-direction: column; height: 480px; }
+  .chat-messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding:12px; scrollbar-width:thin; scrollbar-color:var(--panel-border) transparent; }
+  .chat-msg { max-width: 80%; }
+  .chat-msg.user { align-self: flex-end; }
+  .chat-msg.ai { align-self: flex-start; }
+  .chat-bubble {
+    padding: 10px 14px; border-radius: 10px;
+    font-family: var(--font-ui); font-size: 13px; line-height: 1.6;
+  }
+  .chat-msg.user .chat-bubble {
+    background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.2);
+    color: var(--text-bright); border-radius: 10px 10px 2px 10px;
+  }
+  .chat-msg.ai .chat-bubble {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border);
+    color: var(--text); border-radius: 10px 10px 10px 2px;
+  }
+  .chat-label { font-family:var(--font-mono); font-size:9px; letter-spacing:1.5px; color:var(--text-dim); margin-bottom:4px; padding: 0 4px; }
+  .chat-input-row { display:flex; gap:10px; padding: 12px; border-top: 1px solid var(--panel-border); }
+  .chat-input {
+    flex:1; background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border);
+    border-radius:6px; padding:10px 14px; color: var(--text-bright);
+    font-family: var(--font-ui); font-size:13px; outline:none;
+    transition: border-color .2s;
+  }
+  .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow2); }
+  .chat-input::placeholder { color: var(--text-dim); }
+  .cursor-blink { display:inline-block; color:var(--accent); animation: cursorBlink .6s step-end infinite; }
+  @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ─── TOOLS TAB ─── */
+  .tool-card {
+    border: 1px solid var(--panel-border); border-radius: 8px; padding: 18px;
+    cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .tool-card:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+  .tool-icon { font-size: 28px; margin-bottom: 10px; }
+  .tool-name { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-bright); margin-bottom: 6px; }
+  .tool-desc { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+
+  /* ─── HISTORY TAB ─── */
+  .history-row {
+    display: flex; align-items: center; gap: 14px; padding: 12px;
+    border-bottom: 1px solid var(--panel-border); transition: background .2s;
+    cursor: pointer;
+  }
+  .history-row:hover { background: var(--accent-glow2); }
+  .history-row:last-child { border-bottom: none; }
+  .history-icon { font-size: 20px; }
+  .history-info { flex:1; }
+  .history-name { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--text-bright); }
+  .history-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+
+  /* ─── SECTION SPACING ─── */
+  .section { margin-bottom: 20px; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+
+  /* ─── LOADING RING ─── */
+  .scanning-ring {
+    width: 80px; height: 80px; margin: 20px auto;
+    border-radius: 50%;
+    border: 3px solid var(--panel-border);
+    border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .scanning-ring2 {
+    width: 60px; height: 60px; position:absolute;
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    border-radius:50%;
+    border: 2px solid var(--panel-border);
+    border-bottom-color: var(--accent);
+    animation: spin .5s linear infinite reverse;
+  }
+
+  /* ─── SCORE RING ─── */
+  .score-ring-wrap { display:flex; align-items:center; justify-content:space-around; gap:8px; padding: 14px 0; flex-wrap:wrap; }
+  .score-ring { position:relative; width:80px; height:80px; flex-shrink:0; }
+  .score-ring svg { width:80px; height:80px; transform:rotate(-90deg); }
+  .score-ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .score-num { font-family:var(--font-display); font-size:18px; font-weight:900; }
+  .score-lbl { font-family:var(--font-mono); font-size:7px; letter-spacing:.8px; color:var(--text-dim); text-align:center; line-height:1.3; }
+
+  /* ─── SIGNATURE DB ─── */
+  .sig-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--panel-border); }
+  .sig-row:last-child { border-bottom:none; }
+  .sig-id { font-family:var(--font-mono); font-size:10px; color:var(--text-dim); width:80px; }
+  .sig-name { font-family:var(--font-ui); font-size:12px; font-weight:600; color:var(--text-bright); flex:1; }
+  .sig-cat { font-family:var(--font-mono); font-size:9px; color:var(--accent); border:1px solid var(--panel-border); padding:1px 6px; border-radius:3px; }
+
+  /* hide non-active tabs */
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* ─── PARTICLE CANVAS overlay ─── */
+  #particle-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+  .pulse-circle {
+    position:absolute; border-radius:50%;
+    border: 1px solid var(--accent);
+    opacity: 0;
+    animation: pulseOut 3s ease-out infinite;
+  }
+  @keyframes pulseOut { 0%{transform:scale(.5);opacity:.4} 100%{transform:scale(2.5);opacity:0} }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div class="bg-grid"></div>
+
+<div id="app">
+  <!-- HEADER -->
+  <header id="header">
+    <div class="logo-area">
+      <div class="logo-hex">
+        <svg viewBox="0 0 36 36"><path d="M18 3 L33 11.5 L33 24.5 L18 33 L3 24.5 L3 11.5 Z"/></svg>
+        <div class="inner"></div>
+      </div>
+      <div>
+        <div class="logo-text"><span>LUNOR</span> SCANNER</div>
+        <div class="logo-tag">Advanced Roblox Security Analysis Platform</div>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="status-dot"></div>
+      <span>SYSTEMS NOMINAL</span>
+      &nbsp;|&nbsp;
+      <span id="hdr-time"></span>
+      &nbsp;|&nbsp;
+      <span>ENGINE v4.2.1</span>
+    </div>
+    <div class="header-right">
+      <div class="theme-btn theme-btn-blue active" data-theme="" onclick="setTheme(this,'')"></div>
+      <div class="theme-btn theme-btn-purple" data-theme="theme-purple" onclick="setTheme(this,'theme-purple')"></div>
+      <div class="theme-btn theme-btn-red" data-theme="theme-red" onclick="setTheme(this,'theme-red')"></div>
+      <div class="theme-btn theme-btn-green" data-theme="theme-green" onclick="setTheme(this,'theme-green')"></div>
+      <div class="theme-btn theme-btn-gold" data-theme="theme-gold" onclick="setTheme(this,'theme-gold')"></div>
+      <div class="theme-btn theme-btn-ice" data-theme="theme-ice" onclick="setTheme(this,'theme-ice')"></div>
+      <div class="theme-btn theme-btn-void" data-theme="theme-void" onclick="setTheme(this,'theme-void')"></div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="nav-section-label">Navigation</div>
+    <div class="nav-btn active" onclick="switchTab('dashboard',this)"><span class="nav-icon">⬡</span> Dashboard</div>
+    <div class="nav-btn" onclick="switchTab('scanner',this)"><span class="nav-icon">⬡</span> Scanner <span class="nav-badge" id="scan-badge" style="display:none">!</span></div>
+    <div class="nav-btn" onclick="switchTab('results',this)"><span class="nav-icon">⬡</span> Scan Results</div>
+    <div class="nav-section-label">Tools</div>
+    <div class="nav-btn" onclick="switchTab('ai',this)"><span class="nav-icon">⬡</span> AI Assistant</div>
+    <div class="nav-btn" onclick="switchTab('tools',this)"><span class="nav-icon">⬡</span> Analysis Tools</div>
+    <div class="nav-btn" onclick="switchTab('sigs',this)"><span class="nav-icon">⬡</span> Signature DB</div>
+    <div class="nav-section-label">History</div>
+    <div class="nav-btn" onclick="switchTab('history',this)"><span class="nav-icon">⬡</span> Scan History</div>
+    <div class="nav-btn" onclick="switchTab('settings',this)"><span class="nav-icon">⬡</span> Settings</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main id="main">
+
+    <!-- ──── DASHBOARD TAB ──── -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="section grid-4">
+        <div class="stat-card">
+          <div class="stat-label">Files Scanned</div>
+          <div class="stat-value accent" id="stat-files">2,847</div>
+          <div class="stat-sub">↑ 48 today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Threats Detected</div>
+          <div class="stat-value red" id="stat-threats">12,493</div>
+          <div class="stat-sub">↑ 203 this session</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Clean Files</div>
+          <div class="stat-value green">2,104</div>
+          <div class="stat-sub">73.9% pass rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Engine Status</div>
+          <div class="stat-value" style="font-size:18px;color:var(--green)">● ACTIVE</div>
+          <div class="stat-sub">All modules nominal</div>
+        </div>
+      </div>
+
+      <div class="section grid-60-40">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Global Threat Counter</div><div class="panel-line"></div></div>
+          <div class="big-counter-wrap">
+            <div class="big-counter-label">Total Threats Detected — All Time</div>
+            <div class="big-counter" id="big-counter">48,221</div>
+            <div class="big-counter-sub">Signatures matched across all scanned files</div>
+          </div>
+          <div class="score-ring-wrap">
+            <div class="score-ring">
+              <svg viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--red)" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="173" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center"><div class="score-num" style="color:var(--red)">40%</div><div class="score-lbl">OBFUS&shy;CATION</div></div>
+            </div>
+            <div class="score-ring">
+              <svg viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--yellow)" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="202" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center"><div class="score-num" style="color:var(--yellow)">30%</div><div class="score-lbl">REMOTE ABUSE</div></div>
+            </div>
+            <div class="score-ring">
+              <svg viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--green)" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="231" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center"><div class="score-num" style="color:var(--green)">20%</div><div class="score-lbl">EXEC INJECT</div></div>
+            </div>
+            <div class="score-ring">
+              <svg viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--purple)" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="260" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center"><div class="score-num" style="color:var(--purple)">10%</div><div class="score-lbl">LOADER CHAIN</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Live Activity</div><div class="panel-line"></div></div>
+          <div class="activity-feed" id="activity-feed"></div>
+        </div>
+      </div>
+
+      <div class="section grid-3">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Detection Stages</div><div class="panel-line"></div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+            <div>
+              <div class="progress-label"><span>Stage 1 — Pattern Match</span><span style="color:var(--green)">Active</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+            </div>
+            <div>
+              <div class="progress-label"><span>Stage 2 — Context Analysis</span><span style="color:var(--green)">Active</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+            </div>
+            <div>
+              <div class="progress-label"><span>Stage 3 — Behavior Analysis</span><span style="color:var(--yellow)">Active</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:88%"></div></div>
+            </div>
+            <div>
+              <div class="progress-label"><span>Stage 4 — Confidence Scoring</span><span style="color:var(--accent)">Active</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:95%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Risk Distribution</div><div class="panel-line"></div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+            <div class="progress-label"><span style="color:var(--green)">■ SAFE</span><span>1,847 files</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:65%;background:var(--green);box-shadow:0 0 8px var(--green-glow)"></div></div>
+            <div class="progress-label"><span style="color:var(--yellow)">■ LOW RISK</span><span>412 files</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:14%;background:var(--yellow);box-shadow:none"></div></div>
+            <div class="progress-label"><span style="color:var(--purple)">■ SUSPICIOUS</span><span>298 files</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:10%;background:var(--purple);box-shadow:none"></div></div>
+            <div class="progress-label"><span style="color:#ff8c00">■ HIGH RISK</span><span>176 files</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:6%;background:#ff8c00;box-shadow:none"></div></div>
+            <div class="progress-label"><span style="color:var(--red)">■ INFECTED</span><span>114 files</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:4%;background:var(--red);box-shadow:0 0 8px var(--red-glow)"></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Engine Modules</div><div class="panel-line"></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-family:var(--font-mono);font-size:11px;">
+            <div style="display:flex;justify-content:space-between;"><span>AST Parser</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Entropy Analyzer</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Obfuscation Detector</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Require Chain Tracer</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Remote Analyzer</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>String Decoder</span><span style="color:var(--green)">● ONLINE</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Signature DB</span><span style="color:var(--accent)">● v8.3.1</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>False-Pos Filter</span><span style="color:var(--green)">● ONLINE</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── SCANNER TAB ──── -->
+    <div class="tab-content" id="tab-scanner">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Upload File</div><div class="panel-line"></div></div>
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <div class="drop-icon">⬡</div>
+            <div class="drop-title">DROP FILE TO SCAN</div>
+            <div class="drop-sub">or click to browse</div>
+            <div class="drop-formats">
+              <span class="format-tag">.rbxl</span>
+              <span class="format-tag">.rbxlx</span>
+              <span class="format-tag">.rbxm</span>
+              <span class="format-tag">.lua</span>
+              <span class="format-tag">.luau</span>
+            </div>
+          </div>
+          <input type="file" id="file-input" style="display:none" accept=".rbxl,.rbxlx,.rbxm,.lua,.luau,.txt" onchange="handleFileSelect(event)">
+          <div id="file-selected" style="display:none;margin-top:12px;font-family:var(--font-mono);font-size:12px;color:var(--accent);padding:8px 12px;background:var(--accent-glow2);border-radius:6px;border:1px solid var(--panel-border)"></div>
+        </div>
+      </div>
+
+      <div class="section grid-2">
+        <div class="mode-card active" id="mode-standard" onclick="setMode('standard')">
+          <div class="mode-badge fast">FAST</div>
+          <div class="mode-title"><span>STANDARD</span> SCAN</div>
+          <div class="mode-desc">
+            Quick detection of common threats.<br>
+            Pattern matching · Basic entropy check<br>
+            Remote event flags · Known signatures
+          </div>
+        </div>
+        <div class="mode-card" id="mode-deep" onclick="setMode('deep')">
+          <div class="mode-badge deep">THOROUGH</div>
+          <div class="mode-title"><span>DEEP</span> SCAN</div>
+          <div class="mode-desc">
+            Full recursive analysis.<br>
+            Require chain tracing · Obfuscation detect<br>
+            Execution flow · String decoding · Dep map
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="scan-progress-section" style="display:none">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Scanning in Progress</div><div class="panel-line"></div></div>
+          <div style="position:relative;width:80px;height:80px;margin:0 auto 10px;">
+            <div class="scanning-ring"></div>
+            <div class="scanning-ring2"></div>
+          </div>
+          <div id="scan-status-msg" style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:14px">Initializing scan engine...</div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span id="scan-progress-label">Stage 1 — Pattern Detection</span><span id="scan-pct">0%</span></div>
+            <div class="progress-track"><div class="progress-fill" id="scan-bar" style="width:0%"></div></div>
+          </div>
+          <div class="activity-feed" id="scan-feed" style="height:150px;margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="section" style="display:flex;gap:12px;flex-wrap:wrap" id="scan-btn-row">
+        <button class="btn lg" onclick="startScan()">⬡ &nbsp;Start Scan</button>
+        <button class="btn" onclick="switchTab('results',document.querySelectorAll('.nav-btn')[2])">View Last Results</button>
+      </div>
+    </div>
+
+    <!-- ──── RESULTS TAB ──── -->
+    <div class="tab-content" id="tab-results">
+      <div id="no-results" style="text-align:center;padding:60px;font-family:var(--font-mono);color:var(--text-dim)">
+        No scan results yet. Run a scan from the Scanner tab.
+      </div>
+      <div id="results-content" style="display:none">
+        <div class="section">
+          <div class="threat-result">
+            <div class="threat-result-header">
+              <div>
+                <div style="font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:1.5px;color:var(--text-bright)" id="result-filename">simulator.rbxl</div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px" id="result-meta">Scanned just now · 48 scripts analyzed</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div>
+                  <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim);margin-bottom:4px">RISK SCORE</div>
+                  <div class="risk-badge risk-infected" id="result-risk-badge">HIGH RISK</div>
+                </div>
+                <button class="btn success sm" onclick="downloadClean()">⬇ Clean Version</button>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--panel-border)">
+              <div style="background:var(--bg2);padding:14px;text-align:center">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim)">THREATS</div>
+                <div class="stat-value red" id="result-count" style="font-size:24px">7</div>
+              </div>
+              <div style="background:var(--bg2);padding:14px;text-align:center">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim)">SCRIPTS</div>
+                <div class="stat-value" id="result-scripts" style="font-size:24px">48</div>
+              </div>
+              <div style="background:var(--bg2);padding:14px;text-align:center">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim)">RISK SCORE</div>
+                <div class="stat-value red" id="result-score" style="font-size:24px">87</div>
+              </div>
+              <div style="background:var(--bg2);padding:14px;text-align:center">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim)">SCAN MODE</div>
+                <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--accent)" id="result-mode">DEEP</div>
+              </div>
+            </div>
+
+            <div class="threat-list" id="threat-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── AI ASSISTANT TAB ──── -->
+    <div class="tab-content" id="tab-ai">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">AI Assistant</div><div class="panel-line"></div><span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">Powered by Claude</span></div>
+          <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-msg ai">
+                <div class="chat-label">LUNOR AI</div>
+                <div class="chat-bubble">Hello! I'm the Lunor AI assistant. I can help you analyze Lua/Luau code snippets, explain detected threats, answer security questions, or assist with general programming. What would you like to know?</div>
+              </div>
+            </div>
+            <div class="chat-input-row">
+              <input class="chat-input" id="chat-input" placeholder="Ask anything — code analysis, security questions, Roblox scripting..." onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="btn" onclick="sendChat()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── TOOLS TAB ──── -->
+    <div class="tab-content" id="tab-tools">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Analysis Tools</div><div class="panel-line"></div></div>
+          <div class="grid-3" style="gap:12px">
+            <div class="tool-card">
+              <div class="tool-icon">🌳</div>
+              <div class="tool-name">Script Tree Viewer</div>
+              <div class="tool-desc">Visualize the full script hierarchy and instance tree of any scanned file</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">🗺</div>
+              <div class="tool-name">Asset Explorer</div>
+              <div class="tool-desc">Browse all instances, assets, and properties inside uploaded game files</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">⬡</div>
+              <div class="tool-name">Dependency Graph</div>
+              <div class="tool-desc">Map module require chains and script dependencies as an interactive graph</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">📅</div>
+              <div class="tool-name">Threat Timeline</div>
+              <div class="tool-desc">Chronological view of threat detections across all scan sessions</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">↔</div>
+              <div class="tool-name">Script Diff Viewer</div>
+              <div class="tool-desc">Compare two script versions side-by-side to identify injected code</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">📊</div>
+              <div class="tool-name">Entropy Analyzer</div>
+              <div class="tool-desc">Visualize byte entropy distributions to detect obfuscated or encoded payloads</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── SIGNATURE DB TAB ──── -->
+    <div class="tab-content" id="tab-sigs">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Threat Signature Database</div><div class="panel-line"></div><span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">v8.3.1 · 2,847 signatures</span></div>
+          <div style="display:flex;gap:10px;margin-bottom:16px">
+            <input class="chat-input" placeholder="Search signatures..." style="flex:1;padding:8px 12px;font-size:12px">
+            <button class="btn sm">Filter</button>
+          </div>
+          <div id="sig-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── HISTORY TAB ──── -->
+    <div class="tab-content" id="tab-history">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Scan History</div><div class="panel-line"></div></div>
+          <div id="history-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── SETTINGS TAB ──── -->
+    <div class="tab-content" id="tab-settings">
+      <div class="section">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Settings</div><div class="panel-line"></div></div>
+          <div style="display:flex;flex-direction:column;gap:18px;font-family:var(--font-ui);font-size:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--panel-border)">
+              <div><div style="color:var(--text-bright);font-weight:600">Automatic Deep Scan</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">Run deep analysis on files over 500KB</div></div>
+              <div style="width:40px;height:22px;background:var(--accent);border-radius:11px;cursor:pointer;position:relative"><div style="position:absolute;right:2px;top:2px;width:18px;height:18px;background:white;border-radius:50%"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--panel-border)">
+              <div><div style="color:var(--text-bright);font-weight:600">Auto-Export Clean Files</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">Automatically generate cleaned file on infected detections</div></div>
+              <div style="width:40px;height:22px;background:rgba(255,255,255,0.1);border-radius:11px;cursor:pointer;position:relative"><div style="position:absolute;left:2px;top:2px;width:18px;height:18px;background:var(--text-dim);border-radius:50%"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--panel-border)">
+              <div><div style="color:var(--text-bright);font-weight:600">Confidence Threshold</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">Minimum confidence to flag as threat (0-100)</div></div>
+              <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--accent)">70%</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="color:var(--text-bright);font-weight:600">Signature Database</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">v8.3.1 · Last updated today</div></div>
+              <button class="btn sm">Update Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── THEME ───
+let currentTheme = '';
+function setTheme(el, cls) {
+  document.body.className = cls;
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  document.getElementById('hdr-time').textContent = now.toLocaleTimeString('en-US', {hour12: false});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── TAB SWITCHING ───
+function switchTab(id, navEl) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+}
+
+// ─── BIG COUNTER ANIMATION ───
+let counterVal = 48221;
+setInterval(() => {
+  counterVal += Math.floor(Math.random() * 3) + 1;
+  document.getElementById('big-counter').textContent = counterVal.toLocaleString();
+}, 1800);
+
+// ─── LIVE ACTIVITY FEED ───
+const activityMessages = [
+  ['info', 'Engine heartbeat — all modules nominal'],
+  ['info', 'Scanning Script: ServerScriptService.MainLoader'],
+  ['warn', 'Suspicious require chain detected in ModuleScript'],
+  ['info', 'Analyzing RemoteEvent usage patterns'],
+  ['ok',   'Script cleared — ServerScriptService.DataManager'],
+  ['info', 'Running entropy analysis on encoded string block'],
+  ['warn', 'High obfuscation score: 0.89 entropy ratio'],
+  ['danger','Malicious pattern match: getgenv() + loadstring()'],
+  ['info', 'Checking HTTPService call destinations'],
+  ['info', 'Inspecting TeleportService usage'],
+  ['ok',   'File structure validated — no hidden loaders'],
+  ['warn', 'Unusual BindableEvent firing frequency detected'],
+  ['info', 'Decoding base64 string payload...'],
+  ['danger','Confirmed: Script injection via require() chain'],
+  ['info', 'Scanning ReplicatedStorage.Modules...'],
+  ['ok',   'Module cleared — clean dependency chain'],
+  ['warn', 'Environment manipulation: _G table modification'],
+  ['info', 'Tracing script ancestry for hidden loaders'],
+];
+let aIdx = 0;
+const feed = document.getElementById('activity-feed');
+
+function pushActivity() {
+  const [type, msg] = activityMessages[aIdx % activityMessages.length];
+  aIdx++;
+  const ts = new Date().toLocaleTimeString('en-US', {hour12: false});
+  const el = document.createElement('div');
+  el.className = 'activity-item ' + type;
+  el.innerHTML = `<span class="activity-ts">${ts}</span><span>${msg}</span>`;
+  feed.appendChild(el);
+  if (feed.children.length > 40) feed.removeChild(feed.firstChild);
+  feed.scrollTop = feed.scrollHeight;
+}
+setInterval(pushActivity, 1600);
+
+// ─── SCAN FEED ───
+const scanMessages = [
+  ['info', 'Initializing scan engine...'],
+  ['info', 'Parsing file structure...'],
+  ['info', 'Building script instance tree...'],
+  ['info', 'Stage 1 — Running pattern match engine'],
+  ['info', 'Scanning Script: ServerScriptService.MainLoader'],
+  ['warn', 'Pattern hit: loadstring() detected'],
+  ['info', 'Stage 1 — Scanning ReplicatedStorage...'],
+  ['info', 'Analyzing 48 scripts...'],
+  ['info', 'Stage 2 — Context analysis running'],
+  ['warn', 'Suspicious require chain: depth > 5'],
+  ['info', 'Tracing module dependencies...'],
+  ['info', 'Stage 2 — Analyzing RemoteEvent patterns'],
+  ['warn', 'High-frequency remote firing detected'],
+  ['info', 'Stage 3 — Behavior analysis'],
+  ['warn', 'Script cloning behavior observed'],
+  ['danger','getgenv() + loadstring() confirmed malicious'],
+  ['info', 'Stage 3 — Entropy analysis'],
+  ['warn', 'Encoded string payload detected (base64 block, 2.4KB)'],
+  ['info', 'Stage 4 — Confidence scoring'],
+  ['danger','Threat confirmed: confidence 94%'],
+  ['info', 'Generating report...'],
+  ['ok',   'Scan complete'],
+];
+
+// ─── MODE SELECT ───
+let scanMode = 'standard';
+function setMode(m) {
+  scanMode = m;
+  document.getElementById('mode-standard').classList.toggle('active', m === 'standard');
+  document.getElementById('mode-deep').classList.toggle('active', m === 'deep');
+}
+
+// ─── FILE SELECT ───
+let selectedFile = null;
+function handleFileSelect(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  selectedFile = f;
+  const el = document.getElementById('file-selected');
+  el.style.display = 'block';
+  el.textContent = '⬡  ' + f.name + '  (' + (f.size / 1024).toFixed(1) + ' KB)';
+}
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  selectedFile = f;
+  const el = document.getElementById('file-selected');
+  el.style.display = 'block';
+  el.textContent = '⬡  ' + f.name + '  (' + (f.size / 1024).toFixed(1) + ' KB)';
+}
+
+// ─── SCAN ───
+async function startScan() {
+  const fname = selectedFile ? selectedFile.name : 'demo_game.rbxl';
+  document.getElementById('scan-progress-section').style.display = 'block';
+  document.getElementById('scan-btn-row').style.display = 'none';
+
+  const scanFeed = document.getElementById('scan-feed');
+  const bar = document.getElementById('scan-bar');
+  const pct = document.getElementById('scan-pct');
+  const statusMsg = document.getElementById('scan-status-msg');
+  const labels = ['Stage 1 — Pattern Detection','Stage 1 — Signature Match','Stage 2 — Context Analysis','Stage 3 — Behavior Analysis','Stage 4 — Confidence Scoring','Generating Report'];
+
+  scanFeed.innerHTML = '';
+  let progress = 0;
+  let msgIdx = 0;
+
+  await new Promise(resolve => {
+    const interval = setInterval(() => {
+      progress += Math.random() * 4 + 1;
+      if (progress > 100) progress = 100;
+      bar.style.width = progress + '%';
+      pct.textContent = Math.round(progress) + '%';
+
+      const lblIdx = Math.floor(progress / 18);
+      if (labels[lblIdx]) {
+        document.getElementById('scan-progress-label').textContent = labels[lblIdx];
+        statusMsg.textContent = labels[lblIdx] + '...';
+      }
+
+      if (msgIdx < scanMessages.length && progress > (msgIdx / scanMessages.length) * 100) {
+        const [type, msg] = scanMessages[msgIdx++];
+        const ts = new Date().toLocaleTimeString('en-US', {hour12: false});
+        const el = document.createElement('div');
+        el.className = 'activity-item ' + type;
+        el.innerHTML = `<span class="activity-ts">${ts}</span><span>${msg}</span>`;
+        scanFeed.appendChild(el);
+        scanFeed.scrollTop = scanFeed.scrollHeight;
+      }
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          document.getElementById('scan-progress-section').style.display = 'none';
+          document.getElementById('scan-btn-row').style.display = 'flex';
+          document.getElementById('scan-badge').style.display = 'inline';
+          showResults(fname);
+        }, 800);
+        resolve();
+      }
+    }, 120);
+  });
+}
+
+// ─── RESULTS ───
+const demoThreats = [
+  { sev: 'critical', name: 'Remote Code Execution via loadstring()', loc: 'ServerScriptService.MainLoader:47', desc: 'Script dynamically executes arbitrary code received from a RemoteEvent. Confidence: 97%', conf: 97 },
+  { sev: 'critical', name: 'Environment Hijack — getgenv() Abuse', loc: 'ReplicatedStorage.Core.Loader:12', desc: 'Global environment modification followed by require chain injection. Confidence: 94%', conf: 94 },
+  { sev: 'high', name: 'Obfuscated Payload — Base64 Encoded Script', loc: 'ServerScriptService.Utilities:203', desc: 'Large encoded string block (2.4KB) decoded and executed at runtime. Confidence: 88%', conf: 88 },
+  { sev: 'high', name: 'Suspicious Require Chain (Depth: 7)', loc: 'ReplicatedStorage.Modules.Init', desc: 'Deeply nested module loader with conditional execution paths. Confidence: 82%', conf: 82 },
+  { sev: 'med', name: 'HTTPService — Unauthorized Endpoint', loc: 'ServerScriptService.DataBridge:88', desc: 'HTTP request to unrecognized external endpoint. Confidence: 71%', conf: 71 },
+  { sev: 'med', name: 'Abnormal RemoteEvent Firing Frequency', loc: 'StarterPlayerScripts.EventManager', desc: 'Remote fired >500x/sec without throttle — potential exploit amplifier. Confidence: 66%', conf: 66 },
+  { sev: 'low', name: 'Script Cloning Pattern Detected', loc: 'ReplicatedStorage.Templates.Core', desc: 'Script clones itself into workspace. May be legitimate but warrants review. Confidence: 48%', conf: 48 },
+];
+
+function showResults(fname) {
+  document.getElementById('no-results').style.display = 'none';
+  document.getElementById('results-content').style.display = 'block';
+  document.getElementById('result-filename').textContent = fname;
+  document.getElementById('result-meta').textContent = 'Scanned just now · 48 scripts analyzed · Mode: ' + scanMode.toUpperCase();
+  document.getElementById('result-risk-badge').className = 'risk-badge risk-infected';
+  document.getElementById('result-risk-badge').textContent = 'HIGH RISK';
+  document.getElementById('result-count').textContent = demoThreats.length;
+  document.getElementById('result-scripts').textContent = 48;
+  document.getElementById('result-score').textContent = 87;
+  document.getElementById('result-mode').textContent = scanMode.toUpperCase();
+
+  const list = document.getElementById('threat-list');
+  list.innerHTML = '';
+  demoThreats.forEach(t => {
+    const confColor = t.conf >= 90 ? 'var(--red)' : t.conf >= 70 ? '#ff8c00' : 'var(--yellow)';
+    list.innerHTML += `
+      <div class="threat-item sev-${t.sev}">
+        <div class="threat-sev sev-${t.sev}-badge">${t.sev.toUpperCase()}</div>
+        <div class="threat-info">
+          <div class="threat-name">${t.name}</div>
+          <div class="threat-loc">📍 ${t.loc}</div>
+          <div class="threat-desc">${t.desc}</div>
+          <div class="confidence-bar">
+            <div class="confidence-track">
+              <div class="confidence-fill" style="width:${t.conf}%;background:${confColor};box-shadow:0 0 6px ${confColor}40"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  switchTab('results', document.querySelectorAll('.nav-btn')[2]);
+
+  document.getElementById('stat-files').textContent = (parseInt(document.getElementById('stat-files').textContent.replace(',','')) + 1).toLocaleString();
+  document.getElementById('stat-threats').textContent = (parseInt(document.getElementById('stat-threats').textContent.replace(',','')) + demoThreats.length).toLocaleString();
+
+  addHistory(fname);
+}
+
+function downloadClean() {
+  const fname = document.getElementById('result-filename').textContent;
+  const cleanName = 'Lunor Cleaned - ' + fname;
+  const blob = new Blob([`-- Lunor Scanner Clean Export\n-- Original: ${fname}\n-- Threats removed: ${demoThreats.length}\n-- Generated: ${new Date().toISOString()}\n\n-- Malicious scripts have been stripped from this file.\n-- Safe scripts retained.`], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = cleanName; a.click();
+}
+
+// ─── AI CHAT ───
+function formatReply(text) {
+  return text
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre style="font-family:var(--font-mono);background:rgba(0,0,0,0.4);padding:10px;border-radius:6px;font-size:10px;overflow-x:auto;margin:6px 0;border:1px solid var(--panel-border)">$1</pre>')
+    .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-mono);background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;font-size:11px">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.disabled = true;
+
+  const messages = document.getElementById('chat-messages');
+  const userEl = document.createElement('div');
+  userEl.className = 'chat-msg user';
+  userEl.innerHTML = `<div class="chat-label" style="text-align:right">YOU</div><div class="chat-bubble">${msg}</div>`;
+  messages.appendChild(userEl);
+  messages.scrollTop = messages.scrollHeight;
+
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'chat-msg ai';
+  thinkEl.innerHTML = `<div class="chat-label">LUNOR AI</div><div class="chat-bubble" id="stream-bubble"><span class="cursor-blink">▋</span></div>`;
+  messages.appendChild(thinkEl);
+  messages.scrollTop = messages.scrollHeight;
+
+  const bubble = document.getElementById('stream-bubble');
+  let fullText = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        stream: true,
+        system: 'You are Lunor AI, the built-in assistant of Lunor Scanner — a professional Roblox security analysis platform. You specialize in Lua/Luau security, Roblox exploits, malicious patterns, obfuscation techniques, and cybersecurity. You are also a capable general-purpose assistant. Keep responses concise but thorough.',
+        messages: [{role: 'user', content: msg}]
+      })
+    });
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json = JSON.parse(data);
+          if (json.type === 'content_block_delta' && json.delta?.text) {
+            fullText += json.delta.text;
+            bubble.innerHTML = formatReply(fullText) + '<span class="cursor-blink">▋</span>';
+            messages.scrollTop = messages.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+    bubble.innerHTML = formatReply(fullText);
+  } catch(e) {
+    bubble.textContent = 'AI unavailable — check connection.';
+  }
+
+  messages.scrollTop = messages.scrollHeight;
+  input.disabled = false;
+  input.focus();
+}
+
+// ─── SIGNATURE DB ───
+const signatures = [
+  { id: 'LNR-001', name: 'loadstring() Dynamic Execution', cat: 'EXEC' },
+  { id: 'LNR-002', name: 'getgenv() Environment Access', cat: 'ENV' },
+  { id: 'LNR-003', name: 'Base64 Encoded Payload Block', cat: 'OBFUS' },
+  { id: 'LNR-004', name: 'Deep Require Chain (depth>5)', cat: 'LOADER' },
+  { id: 'LNR-005', name: 'HTTPService Unauthorized Call', cat: 'NETWORK' },
+  { id: 'LNR-006', name: 'Script Cloning Pattern', cat: 'INJECT' },
+  { id: 'LNR-007', name: 'Remote Firing Rate Abuse', cat: 'REMOTE' },
+  { id: 'LNR-008', name: 'pcall Obfuscation Wrapper', cat: 'OBFUS' },
+  { id: 'LNR-009', name: 'shared._G Table Modification', cat: 'ENV' },
+  { id: 'LNR-010', name: 'TeleportService Abuse', cat: 'SERVICE' },
+  { id: 'LNR-011', name: 'BindableEvent High Frequency', cat: 'REMOTE' },
+  { id: 'LNR-012', name: 'Nested Coroutine Spawner', cat: 'EXEC' },
+];
+const sigList = document.getElementById('sig-list');
+signatures.forEach(s => {
+  sigList.innerHTML += `<div class="sig-row"><div class="sig-id">${s.id}</div><div class="sig-name">${s.name}</div><div class="sig-cat">${s.cat}</div></div>`;
+});
+
+// ─── HISTORY ───
+const historyData = [
+  { icon: '🔴', name: 'obby_simulator_v2.rbxl', meta: '2 hours ago · 7 threats · HIGH RISK', score: 'HIGH RISK' },
+  { icon: '🟡', name: 'fps_game_template.rbxm', meta: 'Yesterday · 2 threats · LOW RISK', score: 'LOW RISK' },
+  { icon: '🟢', name: 'tycoon_base.rbxl', meta: '2 days ago · 0 threats · SAFE', score: 'SAFE' },
+  { icon: '🔴', name: 'roleplay_script.luau', meta: '3 days ago · 11 threats · INFECTED', score: 'INFECTED' },
+  { icon: '🟢', name: 'ui_module.lua', meta: 'Last week · 0 threats · SAFE', score: 'SAFE' },
+];
+const histList = document.getElementById('history-list');
+historyData.forEach(h => {
+  histList.innerHTML += `<div class="history-row"><div class="history-icon">${h.icon}</div><div class="history-info"><div class="history-name">${h.name}</div><div class="history-meta">${h.meta}</div></div></div>`;
+});
+
+function addHistory(fname) {
+  const el = document.createElement('div');
+  el.className = 'history-row';
+  el.innerHTML = `<div class="history-icon">🔴</div><div class="history-info"><div class="history-name">${fname}</div><div class="history-meta">Just now · 7 threats · HIGH RISK</div></div>`;
+  const histList = document.getElementById('history-list');
+  histList.insertBefore(el, histList.firstChild);
+}
+
+// ─── RIPPLE ON BUTTONS ───
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+
+// ─── PARTICLE CANVAS ───
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+for (let i = 0; i < 55; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.2 + 0.3,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    alpha: Math.random() * 0.4 + 0.1
+  });
+}
+
+function animParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // get accent color
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00d4ff';
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = p.alpha;
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+</script>
+</body>
+</html>
